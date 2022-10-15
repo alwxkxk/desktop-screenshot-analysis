@@ -1,6 +1,10 @@
 // https://docs.rs/sysinfo/0.26.2/sysinfo/
 #![allow(dead_code)]
 use sysinfo::{DiskExt, System, SystemExt,ProcessExt,NetworkExt};
+use log::{error, info, warn};
+use log4rs;
+// TODO: 正确获取 读写性能
+// TODO:报错的正确处理
 // 监控系统性能，用于方便控制本程序的读写IO，网络IO，CPU等，剩余磁盘空间不能占用过多，
 
 pub fn init_sys_instance()->System{
@@ -22,20 +26,18 @@ pub fn print_sys_info(){
 // 打印磁盘信息
 pub fn print_disk(sys:&System){
     // We display all disks' information:
-    println!("=> disks:");
     for disk in sys.disks() {
-        println!("{:?},available space:{} MB", disk.mount_point(),byte_to_million_byte(disk.available_space()));
+        info!("disk {:?},available space:{} MB", disk.mount_point(),byte_to_million_byte(disk.available_space()));
     }
 }
 
 // 打印内存信息
 pub fn print_memory(sys:&System){
-    println!("=> system:");
     // RAM and swap information:
-    println!("total memory: {} MB", byte_to_million_byte(sys.total_memory()));
-    println!("used memory : {} MB", byte_to_million_byte(sys.used_memory()));
-    println!("total swap  : {} MB", byte_to_million_byte(sys.total_swap()));
-    println!("used swap   : {} MB", byte_to_million_byte(sys.used_swap()));
+    info!("system total memory: {} MB", byte_to_million_byte(sys.total_memory()));
+    info!("system used memory : {} MB", byte_to_million_byte(sys.used_memory()));
+    info!("system total swap  : {} MB", byte_to_million_byte(sys.total_swap()));
+    info!("system used swap   : {} MB", byte_to_million_byte(sys.used_swap()));
 }
 
 // 打印当前进程的信息
@@ -45,24 +47,22 @@ pub fn print_this_process(sys:&System)->Result<(),String>{
     // NOTE: 磁盘读写 在windows上好像有点问题。读一直为同一个值，写一直为0。
     let disk_usage = process.disk_usage();
 
-    println!("{}，使用内存：{} MB,CUP：{:.2}%",  
-        process.name(),
+    info!("memory use：{} MB,CUP use：{:.2}%",  
         byte_to_million_byte(process.memory()),
         process.cpu_usage()
     );
-    println!("磁盘 读：{} B，写{} B ",disk_usage.total_read_bytes,disk_usage.total_written_bytes);
+    info!("disk read：{} B,write: {} B ",disk_usage.total_read_bytes,disk_usage.total_written_bytes);
     return  Ok(());
 }
 
 // 打印网络状态
 pub fn print_network(sys:&System){
     let networks = sys.networks();
-    println!("网络状态:");
     for (interface_name, network) in networks {
-        println!("{} 收：{} B，发:{} B", 
+        info!("network {} received：{} B,send:{} B", 
             interface_name,
             network.received(),
-           network.transmitted()
+            network.transmitted()
         );
     }
 }
