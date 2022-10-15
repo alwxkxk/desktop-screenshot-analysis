@@ -20,7 +20,10 @@ pub fn print_sys_info(){
     sys.refresh_all();
     print_disk(&sys);
     print_memory(&sys);
-    print_this_process(&sys).ok();
+    match print_this_process(&sys){
+        Err(e)=>error!("print_this_process err:{}",e),
+        _=>()
+    }
 }
 
 // 打印磁盘信息
@@ -41,18 +44,17 @@ pub fn print_memory(sys:&System){
 }
 
 // 打印当前进程的信息
-pub fn print_this_process(sys:&System)->Result<(),String>{
+pub fn print_this_process(sys:&System)->Result<&str,&str>{
     let pid = sysinfo::get_current_pid()?;
-    let process =  sys.process(pid).ok_or("没找到本序的Pid。")?;
-    // NOTE: 磁盘读写 在windows上好像有点问题。读一直为同一个值，写一直为0。
-    let disk_usage = process.disk_usage();
+    let process =  sys.process(pid).ok_or("pid not find.")?;
 
+    let disk_usage = process.disk_usage();
     info!("memory use：{} MB,CUP use：{:.2}%",  
         byte_to_million_byte(process.memory()),
         process.cpu_usage()
     );
-    info!("disk read：{} B,write: {} B ",disk_usage.total_read_bytes,disk_usage.total_written_bytes);
-    return  Ok(());
+    info!("disk read：{} B,write: {} B ",disk_usage.read_bytes,disk_usage.written_bytes);
+    return  Ok("");
 }
 
 // 打印网络状态

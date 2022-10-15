@@ -25,6 +25,9 @@ async fn main(){
         interval.tick().await;
         common::sys_refresh(&mut sys);
         common::print_network(&mut sys);
-        common::print_this_process(&sys).ok();
+        match common::print_this_process(&sys){
+            Err(e)=>error!("print_this_process err:{}",e),
+            _=>()
+        }
     }
 }
